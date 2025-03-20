@@ -4,15 +4,12 @@
 
 using namespace std; 
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-int main()
-{
-    if (!glfwInit())
-    {
+int main() {
+    if (!glfwInit()) {
         cout << "Failed to initialize GLFW" << endl;
         return -1;
     }
