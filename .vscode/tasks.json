@@ -12,6 +12,7 @@
                 "-L${workspaceFolder}/lib",
                 "${workspaceFolder}/src/*.cpp",
                 "${workspaceFolder}/src/glad.c",
+                "${workspaceFolder}/src/shaders.h",
                 "-lglfw3dll",
                 "-o",
                 "${workspaceFolder}/cutable.exe"
