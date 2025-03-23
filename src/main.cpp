@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shaders.h"
+#include <vector>
 
 using namespace std;
 
@@ -14,12 +15,20 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 }
 
-void triangleSetup(unsigned int VAO, unsigned int VBO) {
+vector<unsigned int> triangleSetup() {
+    // Initialize buffer object, array object and element object
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+
     // Intialize triangle vertices
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+        0.6f, -0.2f, 0.0f,
+        0.8f, -0.2f, 0.0f,
+        0.7f,  0.5f, 0.0f
     };
 
     // Initialization code (done once unless your object frequently changes)
@@ -31,9 +40,19 @@ void triangleSetup(unsigned int VAO, unsigned int VBO) {
     // then set our vertex attributes pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    return {VAO, VBO, EBO};
 }
 
-void rectangleSetup(unsigned int VAO, unsigned int VBO, unsigned int EBO) {
+vector<unsigned int> rectangleSetup() {
+    // Initialize buffer object, array object and element object
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+
     float vertices[] = {
         0.5f,  0.5f, 0.0f,  // top right
         0.5f, -0.5f, 0.0f,  // bottom right
@@ -55,6 +74,8 @@ void rectangleSetup(unsigned int VAO, unsigned int VBO, unsigned int EBO) {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); 
+
+    return {VAO, VBO, EBO};
 }
 
 int main()
@@ -99,34 +120,20 @@ int main()
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
 
-    // Telling OpenGl which vertex is which for the vertex shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);  
-
-    glUseProgram(shaderProgram);
-
-    // Initialize buffer object, array object and element object
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-
-    //triangleSetup(VAO, VBO);
-    rectangleSetup(VAO, VBO, EBO);
+    unsigned int VAO_tri = triangleSetup()[0];
+    unsigned int VAO_rect = rectangleSetup()[0];
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
 
+        glBindVertexArray(VAO_tri);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindVertexArray(VAO_rect);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
