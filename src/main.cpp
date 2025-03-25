@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 #include "shaders.h"
 #include <vector>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 
@@ -44,7 +46,7 @@ vector<unsigned int> triangleSetup() {
     return {VAO, VBO, EBO};
 }
 
-vector<unsigned int> rectangleSetup() {
+vector<unsigned int> rectangleSetup(float offsetX) {
     // Initialize buffer object, array object and element object
     unsigned int VBO;
     glGenBuffers(1, &VBO);
@@ -54,10 +56,10 @@ vector<unsigned int> rectangleSetup() {
     glGenBuffers(1, &EBO);
 
     float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-       -0.5f, -0.5f, 0.0f,  // bottom left
-       -0.5f,  0.5f, 0.0f   // top left 
+        0.025f + offsetX,  0.30f, 0.0f,  // top right
+        0.025f + offsetX, -0.30f, 0.0f,  // bottom right
+       -0.025f + offsetX, -0.30f, 0.0f,  // bottom left
+       -0.025f + offsetX,  0.30f, 0.0f   // top left 
     };
     unsigned int indices[] = {  // note that we start from 0!
         0, 1, 3,   // first triangle
@@ -76,6 +78,35 @@ vector<unsigned int> rectangleSetup() {
     glEnableVertexAttribArray(0); 
 
     return {VAO, VBO, EBO};
+}
+
+void displayShape(GLFWwindow* window, vector<unsigned int> shapeData, float displayDurationInSeconds) {
+    auto startTime = chrono::high_resolution_clock::now();
+
+    while (true) {
+        auto currentTime = chrono::high_resolution_clock::now();
+        chrono::duration<float> elapsed = currentTime - startTime;
+
+        if (elapsed.count() >= displayDurationInSeconds) {
+            break;
+        }
+
+        unsigned int VAO_rect = shapeData[0];
+
+        // drawing the shape
+        glBindVertexArray(VAO_rect);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // deleting shape from memory
+    glDeleteVertexArrays(1, &shapeData[0]);
+    glDeleteBuffers(1, &shapeData[1]);
+    glDeleteBuffers(1, &shapeData[2]);
+
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 int main()
@@ -120,8 +151,6 @@ int main()
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
 
-    unsigned int VAO_tri = triangleSetup()[0];
-    unsigned int VAO_rect = rectangleSetup()[0];
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -130,14 +159,13 @@ int main()
 
         glUseProgram(shaderProgram);
 
-        glBindVertexArray(VAO_tri);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        //glBindVertexArray(VAO_tri);
+        //glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glBindVertexArray(VAO_rect);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents(); 
+        for (float offsetX = -1.0f + 0.025f; offsetX <= 1.0f + 0.025f; offsetX += 0.1f) {
+            vector<unsigned int> shapeData = rectangleSetup(offsetX);
+            displayShape(window, shapeData, 0.3); // time in seconds
+        } 
     }
 
     glDeleteShader(vertexShader);
