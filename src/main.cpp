@@ -5,6 +5,8 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cmath>
+#include <numbers>
 
 using namespace std;
 
@@ -43,7 +45,7 @@ vector<unsigned int> triangleSetup() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    return {VAO, VBO, EBO};
+    return {VAO, VBO, EBO, 3};
 }
 
 vector<unsigned int> rectangleSetup(float x, float y, float z, float offsetX, float offsetY, float offsetZ) {
@@ -77,18 +79,69 @@ vector<unsigned int> rectangleSetup(float x, float y, float z, float offsetX, fl
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); 
 
-    return {VAO, VBO, EBO};
+    return {VAO, VBO, EBO, 6};
 }
 
-vector<unsigned int> circleSetup() {
-    return {};
+vector<unsigned int> circleSetup(float originX, float originY, float originZ, float radius, int numTriangles) {
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+
+    float theta = 2 * 3.14159 / numTriangles;
+
+    vector<float> vertices;
+    vector<unsigned int> indices;
+
+    // Center vertex
+    vertices.push_back(originX);
+    vertices.push_back(originY);
+    vertices.push_back(originZ);
+
+    float prevX = originX;
+    float prevY = originY - radius;
+
+    for (int i = 0; i <= numTriangles; i++) {
+        float newX = originX + radius * sin(theta * i);
+        float newY = originY + radius - radius * cos(theta * i);
+
+        vertices.push_back(newX);
+        vertices.push_back(newY);
+        vertices.push_back(originZ);
+
+        if (i > 0) {
+            indices.push_back(0);
+            indices.push_back(i);
+            indices.push_back(i+1);
+        }
+
+        prevX = newX;
+        prevY = newY;
+    }
+
+    indices[indices.size() - 1] = 1; //  last triangle wraps around
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(unsigned int), indices.data(), GL_STATIC_DRAW); 
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); 
+
+    return {VAO, VBO, EBO, (unsigned int)(indices.size())};
 }
 
 void createShape(GLFWwindow* window, vector<unsigned int> shapeData) {
     unsigned int VAO = shapeData[0];
 
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);    
+    glDrawElements(GL_TRIANGLES, shapeData[3], GL_UNSIGNED_INT, 0);    
 }
 
 void delShape(vector<unsigned int> shapeData) {
@@ -107,7 +160,9 @@ int main()
     int WIDTH = 800;
     int HEIGHT = 600;
 
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ping Pong", NULL, NULL);
+    
     if (window == NULL) {
         cout << "Failed to initialize window" << endl;
         glfwTerminate();
@@ -143,6 +198,7 @@ int main()
 
     vector<unsigned int> p1shapeData = rectangleSetup(0.05, 0.6, 0, -1 + 0.1, 0, 0);
     vector<unsigned int> p2shapeData = rectangleSetup(0.05, 0.6, 0, 1 - 0.1, 0, 0);
+    vector<unsigned int> ballData = circleSetup(0, 0, 0, 0.1, 100);
 
     // END OF RENDER DATA
 
@@ -159,6 +215,7 @@ int main()
 
         createShape(window, p1shapeData);
         createShape(window, p2shapeData);
+        createShape(window, ballData);
 
         // swap the two buffers, this should be here not in any method
         glfwSwapBuffers(window);
