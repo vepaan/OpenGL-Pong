@@ -46,7 +46,7 @@ vector<unsigned int> triangleSetup() {
     return {VAO, VBO, EBO};
 }
 
-vector<unsigned int> rectangleSetup(float offsetX) {
+vector<unsigned int> rectangleSetup(float x, float y, float z, float offsetX, float offsetY, float offsetZ) {
     // Initialize buffer object, array object and element object
     unsigned int VBO;
     glGenBuffers(1, &VBO);
@@ -56,10 +56,10 @@ vector<unsigned int> rectangleSetup(float offsetX) {
     glGenBuffers(1, &EBO);
 
     float vertices[] = {
-        0.025f + offsetX,  0.30f, 0.0f,  // top right
-        0.025f + offsetX, -0.30f, 0.0f,  // bottom right
-       -0.025f + offsetX, -0.30f, 0.0f,  // bottom left
-       -0.025f + offsetX,  0.30f, 0.0f   // top left 
+        x/2 + offsetX,  y/2 + offsetY, z/2 + offsetZ,  // top right
+        x/2 + offsetX, -y/2 + offsetY, z/2 + offsetZ,  // bottom right
+       -x/2 + offsetX, -y/2 + offsetY, z/2 + offsetZ,  // bottom left
+       -x/2 + offsetX,  y/2 + offsetY, z/2 + offsetZ  // top left 
     };
     unsigned int indices[] = {  // note that we start from 0!
         0, 1, 3,   // first triangle
@@ -80,33 +80,21 @@ vector<unsigned int> rectangleSetup(float offsetX) {
     return {VAO, VBO, EBO};
 }
 
-void displayShape(GLFWwindow* window, vector<unsigned int> shapeData, float displayDurationInSeconds) {
-    auto startTime = chrono::high_resolution_clock::now();
+vector<unsigned int> circleSetup() {
+    return {};
+}
 
-    while (true) {
-        auto currentTime = chrono::high_resolution_clock::now();
-        chrono::duration<float> elapsed = currentTime - startTime;
+void createShape(GLFWwindow* window, vector<unsigned int> shapeData) {
+    unsigned int VAO = shapeData[0];
 
-        if (elapsed.count() >= displayDurationInSeconds) {
-            break;
-        }
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);    
+}
 
-        unsigned int VAO_rect = shapeData[0];
-
-        // drawing the shape
-        glBindVertexArray(VAO_rect);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    // deleting shape from memory
+void delShape(vector<unsigned int> shapeData) {
     glDeleteVertexArrays(1, &shapeData[0]);
     glDeleteBuffers(1, &shapeData[1]);
     glDeleteBuffers(1, &shapeData[2]);
-
-    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 int main()
@@ -151,6 +139,13 @@ int main()
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
 
+    // START TO BUILD DATA TO RENDER
+
+    vector<unsigned int> p1shapeData = rectangleSetup(0.05, 0.6, 0, -1 + 0.1, 0, 0);
+    vector<unsigned int> p2shapeData = rectangleSetup(0.05, 0.6, 0, 1 - 0.1, 0, 0);
+
+    // END OF RENDER DATA
+
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -162,10 +157,12 @@ int main()
         //glBindVertexArray(VAO_tri);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        for (float offsetX = -1.0f + 0.025f; offsetX <= 1.0f + 0.025f; offsetX += 0.1f) {
-            vector<unsigned int> shapeData = rectangleSetup(offsetX);
-            displayShape(window, shapeData, 0.3); // time in seconds
-        } 
+        createShape(window, p1shapeData);
+        createShape(window, p2shapeData);
+
+        // swap the two buffers, this should be here not in any method
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
     glDeleteShader(vertexShader);
